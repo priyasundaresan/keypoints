@@ -46,8 +46,6 @@ class Prediction:
             offsets_x_array = offsets_x_array.data.numpy()
             offsets_y_array = offsets_y_array.data.numpy()
         
-        plt.imshow(plt_img)
-        
         all_heatmaps = []
         CLASSIFICATION_THRESH = 0.95
         for i in range(self.num_classes):
