@@ -10,7 +10,7 @@ from datetime import datetime
 transform = transforms.Compose([transforms.ToTensor()])
 
 class KeypointsDataset(Dataset):
-    def __init__(self, img_folder, labels, num_classes, img_height, img_width, radius, transform):
+    def __init__(self, img_folder, labels_folder, num_classes, img_height, img_width, radius, transform):
         self.num_classes = num_classes
         self.img_height = img_height
         self.img_width = img_width
@@ -18,10 +18,21 @@ class KeypointsDataset(Dataset):
         self.transform = transform
 
         self.imgs = []
-        self.labels = labels
+        self.labels = []
+        for i in range(len(os.listdir(labels_folder))):
+            label = np.load(os.path.join(labels_folder, '%05d.npy'%i))
+            label_formatted = []
+            for u,v in label:
+                label_formatted.append(u)
+                label_formatted.append(v)
+                visible=1
+                label_formatted.append(visible)
+            self.imgs.append(os.path.join(img_folder, '%05d.jpg'%i))
+            self.labels.append(label_formatted)
 
-        for i in range(len(self.labels)):
-            self.imgs.append(os.path.join(img_folder, str(i)+'.jpg'))
+        #self.labels = labels
+        #for i in range(len(self.labels)):
+        #    self.imgs.append(os.path.join(img_folder, str(i)+'.jpg'))
         
         self.map_value = np.array([[np.linalg.norm([self.img_width - _x, self.img_height - _y]) 
                           for _x in range(img_width * 2)] for _y in range(img_height * 2)])
@@ -75,3 +86,13 @@ class KeypointsDataset(Dataset):
     
     def __len__(self):
         return len(self.labels)
+
+if __name__ == '__main__':
+    NUM_CLASSES = 4
+    IMG_WIDTH = 640
+    IMG_HEIGHT = 480
+    RADIUS = 5
+    test_dataset = KeypointsDataset('/host/data/pull_hold_ends/test/images',
+                           '/host/data/pull_hold_ends/test/keypoints', NUM_CLASSES, IMG_HEIGHT, IMG_WIDTH, RADIUS, transform=transform)
+    print(test_dataset[0])
+ 

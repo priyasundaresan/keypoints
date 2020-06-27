@@ -1,8 +1,10 @@
 import torch
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
+import cv2
 from datetime import datetime
 import numpy as np
+
 class Prediction:
     def __init__(self, model, num_classes, img_height, img_width, img_small_height, img_small_width, use_cuda):
         self.model = model
@@ -26,9 +28,7 @@ class Prediction:
             self.offset_x_ij = self.offset_x_ij.cuda()
             self.offset_y_ij = self.offset_y_ij.cuda()
         
-        #self.offset_x_add = (0 - self.offset_x_ij).view(self.img_small_height, self.img_small_width, 1, 1)
         self.offset_x_add = (0 - self.offset_x_ij).view(1, 1, self.img_small_height, self.img_small_width)
-        #self.offset_y_add = (0 - self.offset_y_ij).view(self.img_small_height, self.img_small_width, 1, 1)
         self.offset_y_add = (0 - self.offset_y_ij).view(1, 1, self.img_small_height, self.img_small_width)
         
         self.offset_x_ij = (self.offset_x_ij + self.offset_x_add) 
@@ -74,7 +74,7 @@ class Prediction:
         
         return (maps_array, offsets_x_array, offsets_y_array), keypoints
     
-    def plot(self, plt_img, result, keypoints):
+    def plot(self, plt_img, result, keypoints, image_id=0):
         
         maps_array = result[0]
         offsets_x_array = result[1]
@@ -90,43 +90,29 @@ class Prediction:
         
         plt.imshow(plt_img)
         
+        all_heatmaps = []
         for i in range(self.num_classes):
 
             heatmap = plt_img.copy()            
-            plt.figure(figsize=(12, 9))
-            
-            # heatmap
-            plt.subplot(1, 4, 1)
-            plt.title(str(i))
-            #indexes = maps_array[0][i] > np.percentile(maps_array[0][i], 98.5)
             indexes = maps_array[0][i] > 0.9
-            
             heatmap[indexes] = maps_array[0][i].repeat(3).reshape((self.img_height, self.img_width, 3))[indexes]
-            plt.imshow(heatmap)
             
             # offsets            
             offsets = np.sqrt(offsets_x_array[0][i] * offsets_x_array[0][i] + offsets_y_array[0][i] * offsets_y_array[0][i])
             offsets_repeated = offsets.repeat(3)
             
-            plt.subplot(1, 4, 2)
-            plt.title(str(i))
             offsets_array = offsets_repeated.reshape((self.img_height, self.img_width, 3))
             offsets_array = offsets_array / offsets_array.max()
-            plt.imshow(offsets_array)
             
             # offsets disk
-            plt.subplot(1, 4, 3)
-            plt.title(str(i))
             offsets_array = np.zeros((self.img_height, self.img_width, 3))
             offsets_array[indexes] = offsets_repeated.reshape((self.img_height, self.img_width, 3))[indexes]
             offsets_array = offsets_array / offsets_array.max()
-            print(offsets_array.shape)
-            plt.imshow(offsets_array)
-            
-            # final result
-            plt.subplot(1, 4, 4)
-            plt.imshow(plt_img)
-            # 0.91 1.1
-            plt.scatter(keypoints[i][1] * self.img_height / self.img_small_height, keypoints[i][0] * self.img_width / self.img_small_width)
-            plt.savefig('out%d.png'%i)
-            #plt.show()
+            offsets_array = cv2.normalize(offsets_array, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+            result = cv2.addWeighted(offsets_array,0.4,plt_img,0.6,0)
+            all_heatmaps.append(result)
+        r1,r2,r3,r4 = all_heatmaps
+        res1 = cv2.hconcat([r1,r4])
+        res2 = cv2.hconcat([r2,r3])
+        result = cv2.vconcat([res2,res1])
+        cv2.imwrite('preds/out%04d.png'%image_id, result)
