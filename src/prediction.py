@@ -106,6 +106,7 @@ class Prediction:
             
             # offsets            
             offsets = np.sqrt(offsets_x_array[0][i] * offsets_x_array[0][i] + offsets_y_array[0][i] * offsets_y_array[0][i])
+            print(offsets.shape)
             offsets_repeated = offsets.repeat(3)
             
             plt.subplot(1, 4, 2)
