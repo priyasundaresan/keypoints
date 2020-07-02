@@ -14,7 +14,7 @@ from PIL import Image
 import numpy as np
 # model
 keypoints = Keypoints(NUM_CLASSES, img_height=IMG_HEIGHT, img_width=IMG_WIDTH)
-keypoints.load_state_dict(torch.load('checkpoints/model_2_1_24.pth'))
+keypoints.load_state_dict(torch.load('checkpoints/pull_hold_ends_rand/model_2_1_199.pth'))
 
 # cuda
 use_cuda = torch.cuda.is_available()
@@ -29,9 +29,11 @@ transform = transform = transforms.Compose([
     transforms.ToTensor()
 ])
 
-image_dir = 'data/pull_hold_ends/train/images'
+#image_dir = 'data/pull_hold_ends/train/images'
+image_dir = 'data/pull_hold_ends_rand/test/images'
 
 for i, f in enumerate(sorted(os.listdir(image_dir))):
+    #img = Image.open(os.path.join(image_dir, f)).convert('RGB')
     img = Image.open(os.path.join(image_dir, f))
     img = np.array(img)
     img_t = transform(img)

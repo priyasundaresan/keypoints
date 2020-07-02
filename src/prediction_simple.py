@@ -54,7 +54,6 @@ class Prediction:
             
             # offsets            
             offsets = np.sqrt(offsets_x_array[0][i] * offsets_x_array[0][i] + offsets_y_array[0][i] * offsets_y_array[0][i])
-
             offsets_repeated = offsets.repeat(3)
             
             offsets_array = offsets_repeated.reshape((self.img_height, self.img_width, 3))
@@ -65,7 +64,7 @@ class Prediction:
             offsets_array[indexes] = offsets_repeated.reshape((self.img_height, self.img_width, 3))[indexes]
             offsets_array = offsets_array / offsets_array.max()
             
-            offsets[heatmap < CLASSIFICATION_THRESH] = float('inf') # Hack, disregard all non-classified pixels by setting their offset to inf (need to do this before taking argmin)
+            offsets[heatmap < CLASSIFICATION_THRESH] = float('inf') # Disregard all non-classified pixels by setting their offset to inf (need to do this before taking argmin)
             pred_y, pred_x = np.unravel_index(offsets.argmin(), offsets.shape)
 
             offsets_array = cv2.normalize(offsets_array, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
@@ -73,9 +72,9 @@ class Prediction:
             result = cv2.circle(result, (pred_x,pred_y), 3, (255,50,0), -1)
             all_heatmaps.append(result)
 
-        # Assumes 4 keypoints, modify for more classes
+        # Assumes 4 keypoints, modify for diff # of classes
         r1,r2,r3,r4 = all_heatmaps
-        res1 = cv2.hconcat([r1,r4])
-        res2 = cv2.hconcat([r2,r3])
+        res1 = cv2.hconcat([r1,r4]) # endpoints (r1 = right, r4 = left)
+        res2 = cv2.hconcat([r2,r3]) # pull, hold (r2 = pull, r3 = hold)
         result = cv2.vconcat([res2,res1])
         cv2.imwrite('preds/out%04d.png'%image_id, result)

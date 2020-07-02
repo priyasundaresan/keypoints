@@ -23,17 +23,14 @@ class KeypointsDataset(Dataset):
             label = np.load(os.path.join(labels_folder, '%05d.npy'%i))
             label_formatted = []
             for u,v in label:
-                label_formatted.append(u)
-                label_formatted.append(v)
+                label_formatted.append(np.clip(u, 0, self.img_width-1))
+                label_formatted.append(np.clip(v, 0, self.img_height-1))
                 visible=1
                 label_formatted.append(visible)
             self.imgs.append(os.path.join(img_folder, '%05d.jpg'%i))
+            #self.imgs.append(os.path.join(img_folder, '%05d.png'%i))
             self.labels.append(label_formatted)
 
-        #self.labels = labels
-        #for i in range(len(self.labels)):
-        #    self.imgs.append(os.path.join(img_folder, str(i)+'.jpg'))
-        
         self.map_value = np.array([[np.linalg.norm([self.img_width - _x, self.img_height - _y]) 
                           for _x in range(img_width * 2)] for _y in range(img_height * 2)])
         
@@ -46,6 +43,7 @@ class KeypointsDataset(Dataset):
        
         starttime = datetime.now() 
         img = self.transform(Image.open(self.imgs[index]))
+        #img = self.transform(Image.open(self.imgs[index]).convert('RGB'))
         labels = self.labels[index]
 
         visible = np.zeros(self.num_classes)

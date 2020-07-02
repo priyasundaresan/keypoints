@@ -1,4 +1,5 @@
 import pickle
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -61,16 +62,25 @@ def fit(train_data, test_data, model, loss_function, epochs, checkpoint_path = '
             test_loss += loss.item()
         print('test loss:', test_loss / i_batch)
         
-        torch.save(keypoints.state_dict(), checkpoint_path + 'model_2_1_' + str(epoch)+'.pth')
+        torch.save(keypoints.state_dict(), checkpoint_path + '/model_2_1_' + str(epoch)+'.pth')
 
 # dataset
 workers=0
-train_dataset = KeypointsDataset('data/pull_hold_ends/train/images',
-                           'data/pull_hold_ends/train/keypoints', NUM_CLASSES, IMG_HEIGHT, IMG_WIDTH, RADIUS, transform=transform)
+dataset_dir = 'pull_hold_ends_rand'
+output_dir = 'checkpoints'
+save_dir = os.path.join(output_dir, dataset_dir)
+
+if not os.path.exists(output_dir):
+    os.mkdir(output_dir)
+if not os.path.exists(save_dir):
+    os.mkdir(save_dir)
+
+train_dataset = KeypointsDataset('data/%s/train/images'%dataset_dir,
+                           'data/%s/train/keypoints'%dataset_dir, NUM_CLASSES, IMG_HEIGHT, IMG_WIDTH, RADIUS, transform=transform)
 train_data = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
 
-test_dataset = KeypointsDataset('data/pull_hold_ends/test/images',
-                           'data/pull_hold_ends/test/keypoints', NUM_CLASSES, IMG_HEIGHT, IMG_WIDTH, RADIUS, transform=transform)
+test_dataset = KeypointsDataset('data/%s/test/images'%dataset_dir,
+                           'data/%s/test/keypoints'%dataset_dir, NUM_CLASSES, IMG_HEIGHT, IMG_WIDTH, RADIUS, transform=transform)
 test_data = DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
 
 use_cuda = torch.cuda.is_available()
@@ -88,4 +98,4 @@ keypoints = keypoints.cuda() if use_cuda else keypoints
 # optimizer
 optimizer = optim.Adam(keypoints.parameters(), lr=0.0001)
 
-fit(train_data, test_data, keypoints, custom_loss, epochs=200, checkpoint_path='checkpoints/')
+fit(train_data, test_data, keypoints, custom_loss, epochs=200, checkpoint_path=save_dir)
